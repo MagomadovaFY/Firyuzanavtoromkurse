@@ -1,0 +1,106 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyNowFwVWoCSYwZ5u/b/2bWC",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/MagomadovaFY/Firyuzanavtoromkurse/blob/main/%D0%BA%D0%BE%D0%B4%20%D0%BA%20%D0%BF%D0%B5%D1%80%D0%B2%D0%BE%D0%B9%20%D0%BB%D0%B0%D0%BF%D0%B5%20%D0%BF%D0%B8%D1%82%D0%BE%D0%BD\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 2,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "fOcs-vE6D6S6",
+        "outputId": "0eb2b18e-a0f4-4ba2-e256-6ee5d67a5d03"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Данные успешно сгенерированы и добавлены в базу данных.\n"
+          ]
+        }
+      ],
+      "source": [
+        "import random\n",
+        "import sqlite3\n",
+        "\n",
+        "# Подключение к базе данных (или создание новой)\n",
+        "conn = sqlite3.connect('flights.db')\n",
+        "cursor = conn.cursor()\n",
+        "\n",
+        "# Создание таблицы flights\n",
+        "cursor.execute('''\n",
+        "CREATE TABLE IF NOT EXISTS flights (\n",
+        "    id INTEGER PRIMARY KEY AUTOINCREMENT,\n",
+        "    flight_number TEXT NOT NULL,\n",
+        "    departure_city TEXT NOT NULL,\n",
+        "    arrival_city TEXT NOT NULL,\n",
+        "    departure_time TEXT NOT NULL,\n",
+        "    arrival_time TEXT NOT NULL\n",
+        ")\n",
+        "''')\n",
+        "\n",
+        "# Генерация случайных данных\n",
+        "cities = ['Москва', 'Санкт-Петербург', 'Новосибирск', 'Екатеринбург', 'Казань']\n",
+        "flight_numbers = [f'FL{str(i).zfill(4)}' for i in range(1, 101)]  # FL0001 - FL0100\n",
+        "\n",
+        "def generate_random_flight():\n",
+        "    departure_city = random.choice(cities)\n",
+        "    arrival_city = random.choice(cities)\n",
+        "    while arrival_city == departure_city:  # Убедимся, что города разные\n",
+        "        arrival_city = random.choice(cities)\n",
+        "\n",
+        "    departure_time = f'2023-10-{random.randint(1, 31):02d} {random.randint(0, 23):02d}:{random.randint(0, 59):02d}'\n",
+        "    arrival_time = f'2023-10-{random.randint(1, 31):02d} {random.randint(0, 23):02d}:{random.randint(0, 59):02d}'\n",
+        "\n",
+        "    return {\n",
+        "        'flight_number': random.choice(flight_numbers),\n",
+        "        'departure_city': departure_city,\n",
+        "        'arrival_city': arrival_city,\n",
+        "        'departure_time': departure_time,\n",
+        "        'arrival_time': arrival_time\n",
+        "    }\n",
+        "\n",
+        "# Генерация и выполнение SQL-запросов на вставку\n",
+        "for _ in range(100):  # Генерируем 100 рейсов\n",
+        "    flight = generate_random_flight()\n",
+        "    cursor.execute('''\n",
+        "    INSERT INTO flights (flight_number, departure_city, arrival_city, departure_time, arrival_time)\n",
+        "    VALUES (?, ?, ?, ?, ?)\n",
+        "    ''', (flight['flight_number'], flight['departure_city'], flight['arrival_city'],\n",
+        "          flight['departure_time'], flight['arrival_time']))\n",
+        "\n",
+        "# Сохранение изменений и закрытие соединения\n",
+        "conn.commit()\n",
+        "conn.close()\n",
+        "\n",
+        "print(\"Данные успешно сгенерированы и добавлены в базу данных.\")\n"
+      ]
+    }
+  ]
+}
