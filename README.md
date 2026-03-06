@@ -66,5 +66,9 @@ message CollectMetricsResponse {
     string status = 2;
 }
 
-## 🧩 Описание контракта (metrics.proto)
+---
+
+## 🧩 Генерация gRPC-кода (metrics.proto)
+После создания metrics.proto была выполнена команда:
+
 python -m grpc_tools.protoc -I proto --python_out=. --grpc_python_out=. proto/metrics.proto
