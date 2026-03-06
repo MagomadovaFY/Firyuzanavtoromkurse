@@ -65,5 +65,6 @@ message CollectMetricsResponse {
     int32 received_count = 1;
     string status = 2;
 }
-## 🧩 Описание контракта (После создания metrics.proto была выполнена команда:)
+
+## 🧩 Описание контракта (metrics.proto)
 python -m grpc_tools.protoc -I proto --python_out=. --grpc_python_out=. proto/metrics.proto
