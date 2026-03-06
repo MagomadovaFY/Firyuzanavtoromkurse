@@ -79,10 +79,11 @@ memory_usage в памяти
 python -m grpc_tools.protoc -I proto --python_out=. --grpc_python_out=. proto/metrics.proto
 
 
-
+---
+---
 ## 🧩 Описание контракта (metrics.proto)
 
-
+---
 В файле `proto/metrics.proto` описан сервис и структуры данных:
 
 ```protobuf
