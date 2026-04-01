@@ -68,11 +68,12 @@ message MetricsSummary {
     string message = 3;        // Сообщение о статусе обработки
 }
 
-"""
-Клиентская часть gRPC-сервиса MetricsCollector.
-Отправляет поток метрик на сервер и получает итоговую статистику.
-"""
 
+---
+
+## 🖥️ Сервер (server.py)
+
+```
 import grpc
 import time
 import random
