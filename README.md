@@ -86,7 +86,6 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-
 def generate_metrics():
     """
     Генератор, который создает поток метрик для отправки на сервер.
@@ -107,7 +106,6 @@ def generate_metrics():
         logging.info(f"Отправка метрики: {metric.name} = {metric.value:.2f}%")
         yield metric
         time.sleep(1)
-
 
 def run():
     """Основная функция клиента"""
@@ -133,7 +131,6 @@ def run():
         logging.error(f"Ошибка при вызове RPC: {e.code()} - {e.details()}")
     except Exception as e:
         logging.error(f"Непредвиденная ошибка: {e}")
-
 
 if __name__ == '__main__':
     run()
