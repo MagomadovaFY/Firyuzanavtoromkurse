@@ -67,8 +67,10 @@ message MetricsSummary {
     double total_sum = 2;      // Сумма всех значений метрик
     string message = 3;        // Сообщение о статусе обработки
 }
+
+
 """
-Серверная часть gRPC-сервиса MetricsCollector.
+##Серверная часть gRPC-сервиса MetricsCollector.
 Реализует Client streaming RPC для сбора метрик.
 """
 
