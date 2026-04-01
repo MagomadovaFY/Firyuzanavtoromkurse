@@ -134,3 +134,79 @@ def run():
 
 if __name__ == '__main__':
     run()
+
+
+```
+
+```
+## Клиент (client.py)
+Клиентская часть gRPC-сервиса MetricsCollector.
+Отправляет поток метрик на сервер и получает итоговую статистику.
+
+
+import grpc
+import time
+import random
+import logging
+
+# Импортируем сгенерированные из .proto файла классы
+import metrics_pb2
+import metrics_pb2_grpc
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+
+def generate_metrics():
+    """
+    Генератор, который создает поток метрик для отправки на сервер.
+    """
+    value = 45.0
+    
+    for i in range(5):
+        value += random.uniform(-1, 1) + 2.0
+        value = max(0, value)
+        
+        metric = metrics_pb2.Metric(
+            name="cpu_usage",
+            value=value,
+            timestamp=int(time.time()),
+            tags={"source": "mac_client", "iteration": str(i)}
+        )
+        
+        logging.info(f"Отправка метрики: {metric.name} = {metric.value:.2f}%")
+        yield metric
+        time.sleep(1)
+
+
+def run():
+    """Основная функция клиента"""
+    channel = grpc.insecure_channel('localhost:50051')
+    stub = metrics_pb2_grpc.MetricsCollectorStub(channel)
+    
+    logging.info("=" * 50)
+    logging.info("Клиент запущен. Подключение к серверу localhost:50051...")
+    logging.info("Начинаю отправку потока метрик")
+    logging.info("=" * 50)
+    
+    try:
+        response = stub.CollectMetrics(generate_metrics(), timeout=10)
+        
+        logging.info("=" * 50)
+        logging.info("Получен ответ от сервера:")
+        logging.info(f"Всего метрик: {response.total_count}")
+        logging.info(f"Сумма значений: {response.total_sum:.2f}")
+        logging.info(f"Сообщение: {response.message}")
+        logging.info("=" * 50)
+        
+    except grpc.RpcError as e:
+        logging.error(f"Ошибка при вызове RPC: {e.code()} - {e.details()}")
+    except Exception as e:
+        logging.error(f"Непредвиденная ошибка: {e}")
+
+
+if __name__ == '__main__':
+    run()
