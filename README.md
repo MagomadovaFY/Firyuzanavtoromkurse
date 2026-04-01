@@ -68,6 +68,7 @@ message MetricsSummary {
     string message = 3;        // Сообщение о статусе обработки
 }
 
+---
 
 """
 ##Серверная часть gRPC-сервиса MetricsCollector.
