@@ -70,10 +70,9 @@ message MetricsSummary {
 
 
 ---
-
+```
 ## 🖥️ Сервер (server.py)
 
-```
 import grpc
 import time
 import random
