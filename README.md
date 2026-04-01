@@ -67,13 +67,15 @@ message MetricsSummary {
     double total_sum = 2;      // Сумма всех значений метрик
     string message = 3;        // Сообщение о статусе обработки
 }
+
 """
-Серверная часть gRPC-сервиса MetricsCollector.
-Реализует Client streaming RPC для сбора метрик.
+Клиентская часть gRPC-сервиса MetricsCollector.
+Отправляет поток метрик на сервер и получает итоговую статистику.
 """
 
 import grpc
-from concurrent import futures
+import time
+import random
 import logging
 
 # Импортируем сгенерированные из .proto файла классы
@@ -87,68 +89,53 @@ logging.basicConfig(
 )
 
 
-class MetricsCollectorServicer(metrics_pb2_grpc.MetricsCollectorServicer):
+def generate_metrics():
     """
-    Класс, реализующий логику сервиса MetricsCollector.
-    Наследуется от сгенерированного класса MetricsCollectorServicer.
+    Генератор, который создает поток метрик для отправки на сервер.
     """
+    value = 45.0
     
-    def CollectMetrics(self, request_iterator, context):
-        """
-        Реализация метода CollectMetrics (Client streaming RPC).
+    for i in range(5):
+        value += random.uniform(-1, 1) + 2.0
+        value = max(0, value)
         
-        Параметры:
-            request_iterator: итератор объектов Metric от клиента
-            context: объект контекста вызова
-            
-        Возвращает:
-            MetricsSummary: объект с итоговой статистикой
-        """
-        logging.info("=" * 50)
-        logging.info("Получен запрос на сбор метрик")
-        
-        # Инициализация счетчиков
-        total_count = 0
-        total_sum = 0.0
-        
-        # Обработка каждой метрики из потока
-        for metric in request_iterator:
-            total_count += 1
-            total_sum += metric.value
-            logging.info(f"Получена метрика: {metric.name} = {metric.value:.2f}")
-        
-        logging.info(f"Обработка завершена. Получено метрик: {total_count}, сумма: {total_sum:.2f}")
-        logging.info("=" * 50)
-        
-        # Возвращаем ответ с итоговой статистикой
-        return metrics_pb2.MetricsSummary(
-            total_count=total_count,
-            total_sum=total_sum,
-            message=f"Успешно обработано {total_count} метрик"
+        metric = metrics_pb2.Metric(
+            name="cpu_usage",
+            value=value,
+            timestamp=int(time.time()),
+            tags={"source": "mac_client", "iteration": str(i)}
         )
+        
+        logging.info(f"Отправка метрики: {metric.name} = {metric.value:.2f}%")
+        yield metric
+        time.sleep(1)
 
 
-def serve():
-    """Запуск gRPC сервера"""
-    # Создаем сервер с пулом потоков
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+def run():
+    """Основная функция клиента"""
+    channel = grpc.insecure_channel('localhost:50051')
+    stub = metrics_pb2_grpc.MetricsCollectorStub(channel)
     
-    # Добавляем реализацию сервиса
-    metrics_pb2_grpc.add_MetricsCollectorServicer_to_server(
-        MetricsCollectorServicer(), server
-    )
-    
-    # Настраиваем порт
-    port = 50051
-    server.add_insecure_port(f'[::]:{port}')
-    server.start()
-    logging.info(f"Сервер запущен на порту {port}")
+    logging.info("=" * 50)
+    logging.info("Клиент запущен. Подключение к серверу localhost:50051...")
+    logging.info("Начинаю отправку потока метрик")
+    logging.info("=" * 50)
     
     try:
-        server.wait_for_termination()
-    except KeyboardInterrupt:
-        logging.info("Сервер остановлен")
+        response = stub.CollectMetrics(generate_metrics(), timeout=10)
+        
+        logging.info("=" * 50)
+        logging.info("Получен ответ от сервера:")
+        logging.info(f"Всего метрик: {response.total_count}")
+        logging.info(f"Сумма значений: {response.total_sum:.2f}")
+        logging.info(f"Сообщение: {response.message}")
+        logging.info("=" * 50)
+        
+    except grpc.RpcError as e:
+        logging.error(f"Ошибка при вызове RPC: {e.code()} - {e.details()}")
+    except Exception as e:
+        logging.error(f"Непредвиденная ошибка: {e}")
 
 
 if __name__ == '__main__':
-    serve()
+    run()
