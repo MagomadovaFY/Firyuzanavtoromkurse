@@ -68,8 +68,6 @@ message MetricsSummary {
     string message = 3;        // Сообщение о статусе обработки
 }
 
-
----
 ```
 ## 🖥️ Сервер (server.py)
 
