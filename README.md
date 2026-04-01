@@ -68,4 +68,61 @@ message MetricsSummary {
     string message = 3;        // Сообщение о статусе обработки
 }
 
+import grpc
+from concurrent import futures
+import logging
+
+import metrics_pb2
+import metrics_pb2_grpc
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
+
+class MetricsCollectorServicer(metrics_pb2_grpc.MetricsCollectorServicer):
+    """Реализация сервиса MetricsCollector"""
+    
+    def CollectMetrics(self, request_iterator, context):
+        """Client streaming RPC метод для сбора метрик"""
+        logging.info("Получен запрос на сбор метрик")
+        
+        total_count = 0
+        total_sum = 0.0
+        
+        for metric in request_iterator:
+            total_count += 1
+            total_sum += metric.value
+            logging.info(f"Получена метрика: {metric.name} = {metric.value:.2f}")
+        
+        logging.info(f"Обработка завершена. Получено метрик: {total_count}, сумма: {total_sum:.2f}")
+        
+        return metrics_pb2.MetricsSummary(
+            total_count=total_count,
+            total_sum=total_sum,
+            message=f"Успешно обработано {total_count} метрик"
+        )
+
+
+def serve():
+    """Запуск gRPC сервера"""
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    metrics_pb2_grpc.add_MetricsCollectorServicer_to_server(
+        MetricsCollectorServicer(), server
+    )
+    
+    port = 50051
+    server.add_insecure_port(f'[::]:{port}')
+    server.start()
+    logging.info(f"Сервер запущен на порту {port}")
+    
+    try:
+        server.wait_for_termination()
+    except KeyboardInterrupt:
+        logging.info("Сервер остановлен")
+
+
+if __name__ == '__main__':
+    serve()
 
