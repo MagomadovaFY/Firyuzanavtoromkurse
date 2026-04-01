@@ -67,14 +67,20 @@ message MetricsSummary {
     double total_sum = 2;      // Сумма всех значений метрик
     string message = 3;        // Сообщение о статусе обработки
 }
+"""
+Серверная часть gRPC-сервиса MetricsCollector.
+Реализует Client streaming RPC для сбора метрик.
+"""
 
 import grpc
 from concurrent import futures
 import logging
 
+# Импортируем сгенерированные из .proto файла классы
 import metrics_pb2
 import metrics_pb2_grpc
 
+# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -82,22 +88,39 @@ logging.basicConfig(
 
 
 class MetricsCollectorServicer(metrics_pb2_grpc.MetricsCollectorServicer):
-    """Реализация сервиса MetricsCollector"""
+    """
+    Класс, реализующий логику сервиса MetricsCollector.
+    Наследуется от сгенерированного класса MetricsCollectorServicer.
+    """
     
     def CollectMetrics(self, request_iterator, context):
-        """Client streaming RPC метод для сбора метрик"""
+        """
+        Реализация метода CollectMetrics (Client streaming RPC).
+        
+        Параметры:
+            request_iterator: итератор объектов Metric от клиента
+            context: объект контекста вызова
+            
+        Возвращает:
+            MetricsSummary: объект с итоговой статистикой
+        """
+        logging.info("=" * 50)
         logging.info("Получен запрос на сбор метрик")
         
+        # Инициализация счетчиков
         total_count = 0
         total_sum = 0.0
         
+        # Обработка каждой метрики из потока
         for metric in request_iterator:
             total_count += 1
             total_sum += metric.value
             logging.info(f"Получена метрика: {metric.name} = {metric.value:.2f}")
         
         logging.info(f"Обработка завершена. Получено метрик: {total_count}, сумма: {total_sum:.2f}")
+        logging.info("=" * 50)
         
+        # Возвращаем ответ с итоговой статистикой
         return metrics_pb2.MetricsSummary(
             total_count=total_count,
             total_sum=total_sum,
@@ -107,11 +130,15 @@ class MetricsCollectorServicer(metrics_pb2_grpc.MetricsCollectorServicer):
 
 def serve():
     """Запуск gRPC сервера"""
+    # Создаем сервер с пулом потоков
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    
+    # Добавляем реализацию сервиса
     metrics_pb2_grpc.add_MetricsCollectorServicer_to_server(
         MetricsCollectorServicer(), server
     )
     
+    # Настраиваем порт
     port = 50051
     server.add_insecure_port(f'[::]:{port}')
     server.start()
@@ -125,4 +152,3 @@ def serve():
 
 if __name__ == '__main__':
     serve()
-
