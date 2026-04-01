@@ -36,6 +36,36 @@
 | **Входные данные** | Поток метрик (Metric) |
 | **Выходные данные** | Статистика обработки (MetricsSummary) |
 
-### Схема взаимодействия
+
+---
+
+## 📄 Контракт сервиса (metrics.proto)
+
+```protobuf
+syntax = "proto3";
+
+package metrics;
+
+// Сервис для сбора метрик
+service MetricsCollector {
+    // Client streaming RPC: клиент отправляет поток метрик,
+    // сервер возвращает один ответ с итоговой статистикой
+    rpc CollectMetrics(stream Metric) returns (MetricsSummary) {}
+}
+
+// Сообщение, представляющее одну метрику
+message Metric {
+    string name = 1;               // Имя метрики (например, "cpu_usage")
+    double value = 2;              // Значение метрики
+    int64 timestamp = 3;           // Временная метка (Unix timestamp)
+    map<string, string> tags = 4;  // Теги для дополнительной фильтрации
+}
+
+// Сообщение-ответ с итоговой статистикой
+message MetricsSummary {
+    int32 total_count = 1;    // Общее количество полученных метрик
+    double total_sum = 2;      // Сумма всех значений метрик
+    string message = 3;        // Сообщение о статусе обработки
+}
 
 
